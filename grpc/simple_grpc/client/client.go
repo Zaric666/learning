@@ -8,7 +8,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	user "github.com/Zaric666/learning/grpc/simple-grpc/user"
+	user "github.com/Zaric666/learning/grpc/simple_grpc/user"
 )
 
 const (
