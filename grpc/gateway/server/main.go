@@ -35,9 +35,7 @@ func main() {
 
 	log.Println("Serving gRPC on 0.0.0.0" + fmt.Sprintf(":%d", *port))
 
-	go func() {
-		if err := s.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
-		}
-	}()
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
 }
