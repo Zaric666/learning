@@ -1,25 +1,25 @@
 package main
 
 import (
-	"sync"
-	"time"
+	"fmt"
 )
 
-func main() {
-	var wg sync.WaitGroup
-	wg.Add(10)
-	for i := 0; i < 10; i++ {
-		go work(&wg)
-	}
-	wg.Wait()
-	// Wait to see the global run queue deplete.
-	time.Sleep(3 * time.Second)
+type Counter interface {
+	With() Counter
 }
-func work(wg *sync.WaitGroup) {
-	time.Sleep(time.Second)
-	var counter int
-	for i := 0; i < 1e10; i++ {
-		counter++
+
+type A struct {
+	I int
+}
+
+func (a *A) With() Counter {
+	return a
+}
+func main() {
+	var a1 Counter
+	{
+		var a A
+		a1 = a.With()
 	}
-	wg.Done()
+	fmt.Printf("%v", a1)
 }
