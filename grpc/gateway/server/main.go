@@ -5,6 +5,9 @@ import (
 	"flag"
 	"fmt"
 	pb "github.com/Zaric666/learning/grpc/gateway/proto"
+	"github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/go-grpc-middleware/ratelimit"
+	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"google.golang.org/grpc"
 	"log"
 	"net"
@@ -20,9 +23,23 @@ func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloRe
 	return &pb.HelloResponse{Message: "hello " + in.Name}, nil
 }
 
+type ServerLimiter struct {
+}
+
+func (s *ServerLimiter) Limit() bool {
+	return false
+}
+
 func main() {
 	// Create a gRPC server object
-	s := grpc.NewServer()
+	limiter := &ServerLimiter{}
+	s := grpc.NewServer(
+		// https://github.com/grpc-ecosystem/go-grpc-middleware
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			grpc_recovery.UnaryServerInterceptor(),
+			ratelimit.UnaryServerInterceptor(limiter),
+		)),
+	)
 
 	// Attach the Greeter service to the server
 	pb.RegisterHelloServiceServer(s, &server{})
