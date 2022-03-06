@@ -30,30 +30,35 @@ func (s *ecServer) UnaryEcho(ctx context.Context, req *pb.EchoRequest) (*pb.Echo
 }
 
 func main() {
-	addrs := []string{"127.0.0.1:12379"}
-	etcdRegister := discovery.NewRegister(addrs, zap.NewNop())
-	node := discovery.Server{
-		Name: app,
-		Addr: grpcAddress,
-	}
+	grpcAdders := []string{"127.0.0.1:8083", "127.0.0.1:8084", "127.0.0.1:8085", "127.0.0.1:8086"}
+	adders := []string{"127.0.0.1:12379"}
+	etcdRegister := discovery.NewRegister(adders, zap.NewNop())
+	servers := make([]*grpc.Server, 10)
+	for _, grpcAdder := range grpcAdders {
+		node := discovery.Server{
+			Name: app,
+			Addr: grpcAdder,
+		}
+		server, err := StartServer(grpcAdder)
+		servers = append(servers, server)
+		if err != nil {
+			panic(fmt.Sprintf("start server failed : %v", err))
+		}
+		if _, err := etcdRegister.Register(node, 10); err != nil {
+			panic(fmt.Sprintf("server register failed: %v", err))
+		}
 
-	server, err := Start()
-	if err != nil {
-		panic(fmt.Sprintf("start server failed : %v", err))
+		fmt.Println("service started listen on", grpcAdder)
 	}
-
-	if _, err := etcdRegister.Register(node, 10); err != nil {
-		panic(fmt.Sprintf("server register failed: %v", err))
-	}
-
-	fmt.Println("service started listen on", grpcAddress)
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
 	for {
 		s := <-c
 		switch s {
 		case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT:
-			server.Stop()
+			for _, s := range servers {
+				s.Stop()
+			}
 			etcdRegister.Stop()
 			time.Sleep(time.Second)
 			return
@@ -64,11 +69,11 @@ func main() {
 	}
 }
 
-func Start() (*grpc.Server, error) {
+func StartServer(addr string) (*grpc.Server, error) {
 	s := grpc.NewServer()
 
-	pb.RegisterEchoServer(s, &ecServer{addr: grpcAddress})
-	lis, err := net.Listen("tcp", grpcAddress)
+	pb.RegisterEchoServer(s, &ecServer{addr: addr})
+	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		return nil, err
 	}
