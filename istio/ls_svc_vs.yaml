@@ -5,6 +5,9 @@ metadata:
 spec:
   hosts:
   - web-svc
+  - web-svc.gateway.io
+  gateways:
+  - web-svc-gateway
   http:
     - route:
       - destination:
