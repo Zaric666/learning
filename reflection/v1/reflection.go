@@ -1,9 +1,14 @@
 package v1
 
-import "reflect"
+import (
+	"reflect"
+)
 
 func walk(x interface{}, fn func(input string)) {
 	val := reflect.ValueOf(x)
-	field := val.Field(0)
-	fn(field.String())
+	fieldVal := val.Field(0)
+	vt := reflect.TypeOf(x)
+	fieldKey := vt.Field(0)
+
+	fn(fieldKey.Name + ":" + fieldVal.String())
 }

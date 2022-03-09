@@ -16,7 +16,7 @@ func TestWalk(t *testing.T) {
 			struct {
 				Name string
 			}{"Chris"},
-			[]string{"Chris"},
+			[]string{"Name:Chris"},
 		},
 	}
 	for _, test := range cases {
